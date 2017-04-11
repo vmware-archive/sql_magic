@@ -1,1 +1,1 @@
-from sql_magic.sql_magic import *
+from .sql_magic import *
