@@ -1,0 +1,1 @@
+from sql_magic.sql_magic import *
