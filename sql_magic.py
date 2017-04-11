@@ -1,4 +1,5 @@
 import argparse
+import sys
 import time
 import threading
 
@@ -46,6 +47,8 @@ def is_an_available_connection(connection):
 
 
 def is_a_spark_connection(connection):
+    if 'pyspark' not in sys.modules:  # pyspark isn't even installed
+        return False
     return isinstance(connection, (pyspark.sql.session.SparkSession,
                                    pyspark.sql.context.SQLContext,
                                    pyspark.sql.context.HiveContext))
