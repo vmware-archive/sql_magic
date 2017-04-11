@@ -20,9 +20,9 @@ DEFAULT_NOTIFY_RESULT = True
 
 try:
     import pyspark
-    AVAILABLE_CONNECTIONS.append(pyspark.sql.session.SparkSession)
     AVAILABLE_CONNECTIONS.append(pyspark.sql.context.SQLContext)
     AVAILABLE_CONNECTIONS.append(pyspark.sql.context.HiveContext)
+    AVAILABLE_CONNECTIONS.append(pyspark.sql.session.SparkSession)  # import last;  will fail for older spark versions
 except:
     pass
 try:
@@ -49,9 +49,7 @@ def is_an_available_connection(connection):
 def is_a_spark_connection(connection):
     if 'pyspark' not in sys.modules:  # pyspark isn't even installed
         return False
-    return isinstance(connection, (pyspark.sql.session.SparkSession,
-                                   pyspark.sql.context.SQLContext,
-                                   pyspark.sql.context.HiveContext))
+    return type(connection).__module__.startswith('pyspark')
 
 
 def is_a_sql_db_connection(connection):
