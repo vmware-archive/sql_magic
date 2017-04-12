@@ -221,7 +221,7 @@ class Notify():
             Notification.requestPermission();
           else {{
             var notification = new Notification('Query Finished in {del_time:2.2f} s', {{
-              icon: 'logo.png',
+              icon: 'https://raw.githubusercontent.com/crawles/Logos/master/jupyter.png',
               body: "{pretty_time}\\n\\nName: {return_name}\\nDimensions: {return_shape}",
             }});
 
