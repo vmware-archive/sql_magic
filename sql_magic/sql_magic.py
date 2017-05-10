@@ -174,7 +174,8 @@ class SQLConn(Magics, Configurable):
     @cell_magic
     def readsql(self, line, cell):
         user_args = self._parse_readsql_args(line)
-        table_name, toggle_display, toggle_notify, async = [user_args[k] for k in ['table_name','display','notify','async']]
+        table_name, toggle_display, toggle_notify, async = [user_args[k] for k in ['table_name', 'display',
+                                                                                   'notify', 'async']]
         sql = cell.format(**self.jupyter_namespace)
 
         show_output = self.output_result ^ toggle_display
@@ -220,8 +221,8 @@ class Notify():
           if (Notification.permission !== "granted")
             Notification.requestPermission();
           else {{
-            var notification = new Notification('Query Finished in {del_time:2.2f} s', {{
-              icon: 'https://raw.githubusercontent.com/crawles/Logos/master/jupyter.png',
+            var notification = new Notification('Query Finished in {del_time:2.2f} m', {{
+              icon: 'https://raw.githubusercontent.com/crawles/Logos/master/jupyter.png?raw=true',
               body: "{pretty_time}\\n\\nName: {return_name}\\nDimensions: {return_shape}",
             }});
 

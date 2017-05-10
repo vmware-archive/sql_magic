@@ -28,3 +28,7 @@ target/
 
 # Jupyter Notebook
 .ipynb_checkpoints
+
+metastore_db
+derby.log
+logo.png
