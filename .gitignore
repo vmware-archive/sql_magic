@@ -29,6 +29,13 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# PyCharm
+.cache
+.idea
+
+# sqlite
+test.db
+
 metastore_db
 derby.log
 logo.png
