@@ -47,7 +47,7 @@ def is_an_available_connection(connection):
 
 
 def is_a_spark_connection(connection):
-    if 'pyspark' not in sys.modules:  # pyspark even installed
+    if 'pyspark' not in sys.modules:  # pyspark isn't installed
         return False
     return type(connection).__module__.startswith('pyspark')
 
@@ -78,11 +78,16 @@ class SQLConn(Magics, Configurable):
         Configurable.__init__(self, config=shell.config)
         Magics.__init__(self, shell=shell)
 
+        self.notify_obj = Notify(shell)
+
         # Add ourself to the list of module configurable via %config
         self.shell.configurables.append(self)
 
     def _psql_read_sql_to_df(self, sql_code):
-        return psql.read_sql(sql_code, self.conn_object)
+        try:
+            return psql.read_sql(sql_code, self.conn_object)
+        except(TypeError):
+            raise NoQueryResult("Query doesn't return a result; please use %%execsql")
 
     def _psql_execsql(self, sql_code):
         return psql.execute(sql_code, self.conn_object)
@@ -100,7 +105,6 @@ class SQLConn(Magics, Configurable):
     @validate('conn_object_name')
     def _validate_conn_object_name(self, proposal):
         jupyter_namespace = self.shell.all_ns_refs[0]
-
         if proposal['value'] not in jupyter_namespace.keys():
             raise TraitError('Connection name "{}" not recognized'.format(proposal['value']))
         proposal_value = self.jupyter_namespace[proposal['value']]
@@ -113,7 +117,6 @@ class SQLConn(Magics, Configurable):
     def config_connection(self, change):
         new_conn_object_name = change['new']
         conn_object = self.jupyter_namespace[new_conn_object_name]
-
         self.conn_object = conn_object
         if is_a_spark_connection(conn_object):
             caller = self._spark_call
@@ -163,13 +166,13 @@ class SQLConn(Magics, Configurable):
         if show_output:
             self.shell.displayhook(result)
         if notify_result:
-            notify_obj.notify_complete(del_time, table_name, result.shape)
+            self.notify_obj.notify_complete(del_time, table_name, result.shape)
 
     def _execsql_engine(self, sql, notify_result):
         result, del_time = self._time_query(self._psql_execsql, sql)
 
         if notify_result:
-            notify_obj.notify_complete(del_time, 'Execute SQL', None)
+            self.notify_obj.notify_complete(del_time, 'Execute SQL', None)
 
     @cell_magic
     def readsql(self, line, cell):
@@ -197,6 +200,9 @@ class SQLConn(Magics, Configurable):
         notify_result = self.notify_result ^ toggle_notify
         self._execsql_engine(sql, notify_result)
 
+
+class NoReturnedResult(Exception):
+    pass
 
 
 class Notify():
@@ -241,8 +247,6 @@ class Notify():
 def load_ipython_extension(ip):
     """Load the extension in IPython."""
     ip.register_magics(SQLConn)
-    global notify_obj
-    notify_obj = Notify(ip)
 
 def unload_ipython_extension(ip):
     # fix how it loads multiple times
