@@ -1,7 +1,6 @@
 import pytest
 import pandas
 import sql_magic
-from traitlets import TraitError
 
 from IPython import get_ipython
 from sqlalchemy import create_engine
