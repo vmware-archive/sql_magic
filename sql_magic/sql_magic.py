@@ -217,12 +217,14 @@ class Notify():
     def notify_complete(self, del_time, return_name, return_shape):
         pretty_time = time.strftime('%I:%M:%S %p %Z')
         cell_id = int(time.time())
+        cur_time = (1+time.time())*1000.
         string_args = {
             'pretty_time': pretty_time,
             'del_time': del_time,
             'cell_id': cell_id,
             'return_name': return_name,
-            'return_shape': return_shape
+            'return_shape': return_shape,
+            'cur_time': cur_time
         }
         add_cell_id = '<a id="{cell_id}"></a>\n'.format(cell_id=cell_id)
         alert_str = '''
@@ -242,7 +244,9 @@ class Notify():
 
           }}
         }}
-        notifyMe()
+        // prevents notifications from popping up when notebook is re-opened
+        if (Date.now() < {cur_time}) {{
+        notifyMe(); }};
         </script>
         '''.format(**string_args)
         html_str = add_cell_id + alert_str
