@@ -18,6 +18,8 @@ AVAILABLE_CONNECTIONS = []
 DEFAULT_OUTPUT_RESULT = True
 DEFAULT_NOTIFY_RESULT = True
 
+no_return_result_exceptions = []  # catch exception if user used readsql where query returns no result
+
 try:
     import pyspark
     AVAILABLE_CONNECTIONS.append(pyspark.sql.context.SQLContext)
@@ -28,6 +30,7 @@ except:
 try:
     import psycopg2
     AVAILABLE_CONNECTIONS.append(psycopg2.extensions.connection)
+    no_return_result_exceptions.append(TypeError)
 except:
     pass
 try:
@@ -38,6 +41,7 @@ except:
 try:
     import sqlalchemy
     AVAILABLE_CONNECTIONS.append(sqlalchemy.engine.base.Engine)
+    no_return_result_exceptions.append(sqlalchemy.exc.ResourceClosedError)
 except:
     pass
 
@@ -86,8 +90,8 @@ class SQLConn(Magics, Configurable):
     def _psql_read_sql_to_df(self, sql_code):
         try:
             return psql.read_sql(sql_code, self.conn_object)
-        except(TypeError):
-            raise NoQueryResult("Query doesn't return a result; please use %%execsql")
+        except(tuple(no_return_result_exceptions)):
+            raise NoReturnValueResult("Query doesn't return a result; please use %%execsql")
 
     def _psql_execsql(self, sql_code):
         return psql.execute(sql_code, self.conn_object)
@@ -201,7 +205,7 @@ class SQLConn(Magics, Configurable):
         self._execsql_engine(sql, notify_result)
 
 
-class NoReturnedResult(Exception):
+class NoReturnValueResult(Exception):
     pass
 
 

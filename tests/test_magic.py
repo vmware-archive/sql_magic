@@ -32,12 +32,16 @@ def test_query_1_notify(sqlite_conn):
     assert df.iloc[0, 0] == 1
 
 def test_readsql_create_table_error():
-    non_valid_conn = 'BAD_CONN'
-    with pytest.raises(TraitError):
+    with pytest.raises(sql_magic.NoReturnValueResult):
         conn = sqlite_conn
         ip.all_ns_refs[0]['conn'] = conn
         ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
-        ip.run_cell_magic('readsql', '', 'CREATE TABLE test AS SELECT 1')
-# def setup():
-#     sqlmagic = SqlMagic(shell=ip)
-#     ip.register_magics(sqlmagic)
+        ip.run_cell_magic('readsql', '', 'DROP TABLE IF EXISTS test')
+
+def test_execsql():
+    ip.run_cell_magic('execsql', '', 'DROP TABLE IF EXISTS test;')
+    ip.run_cell_magic('execsql', '', 'CREATE TABLE test AS SELECT 2;')
+    ip.run_cell_magic('readsql', 'df2', 'SELECT * FROM test')
+    df2 = ip.all_ns_refs[0]['df2']
+    ip.run_cell_magic('execsql', '', 'DROP TABLE IF EXISTS test;')
+    assert df2.iloc[0, 0] == 2
