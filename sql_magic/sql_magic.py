@@ -47,7 +47,7 @@ def is_an_available_connection(connection):
 
 
 def is_a_spark_connection(connection):
-    if 'pyspark' not in sys.modules:  # pyspark isn't even installed
+    if 'pyspark' not in sys.modules:  # pyspark even installed
         return False
     return type(connection).__module__.startswith('pyspark')
 
