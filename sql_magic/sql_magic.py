@@ -4,7 +4,7 @@ import time
 import threading
 
 import pandas.io.sql as psql
-from IPython.core.display import display, HTML
+from IPython.core.display import display, display_javascript, HTML
 from IPython.core.magic import Magics, magics_class, cell_magic
 
 try:
@@ -18,7 +18,7 @@ AVAILABLE_CONNECTIONS = []
 DEFAULT_OUTPUT_RESULT = True
 DEFAULT_NOTIFY_RESULT = True
 
-no_return_result_exceptions = []  # catch exception if user used readsql where query returns no result
+no_return_result_exceptions = []  # catch exception if user used read_sql where query returns no result
 
 try:
     import pyspark
@@ -61,10 +61,9 @@ def is_a_sql_db_connection(connection):
     return isinstance(connection, tuple(AVAILABLE_CONNECTIONS))
 
 
-# add syntax
-import IPython
-js_sql_syntax = "IPython.CodeCell.config_defaults.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%readsql/, /^%%execsql/]};"
-IPython.core.display.display_javascript(js_sql_syntax, raw=True)
+# add syntax coloring
+js_sql_syntax = "IPython.CodeCell.config_defaults.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%read_sql/, /^%%exec_sql/]};"
+display_javascript(js_sql_syntax, raw=True)
 
 @magics_class
 class SQLConn(Magics, Configurable):
@@ -91,9 +90,9 @@ class SQLConn(Magics, Configurable):
         try:
             return psql.read_sql(sql_code, self.conn_object)
         except(tuple(no_return_result_exceptions)):
-            raise NoReturnValueResult("Query doesn't return a result; please use %%execsql")
+            raise NoReturnValueResult("Query doesn't return a result; please use %%exec_sql")
 
-    def _psql_execsql(self, sql_code):
+    def _psql_exec_sql(self, sql_code):
         return psql.execute(sql_code, self.conn_object)
 
     def _spark_call(self, sql_code):
@@ -136,15 +135,14 @@ class SQLConn(Magics, Configurable):
                                                result to a variable', action='store_true')
         return ap
 
-
-    def _parse_readsql_args(self, line_string):
+    def _parse_read_sql_args(self, line_string):
         ap = self._create_flag_parser(line_string)
         ap.add_argument('-d', '--display', help='Toggle option for outputing query result', action='store_true')
         ap.add_argument('table_name', nargs='?')
         opts = ap.parse_args(line_string.split())
         return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify, 'async': opts.async}
 
-    def _parse_execsql_args(self, line_string):
+    def _parse_exec_sql_args(self, line_string):
         ap = self._create_flag_parser(line_string)
         opts = ap.parse_args(line_string.split())
         return {'notify': opts.notify, 'async': opts.async}
@@ -160,7 +158,7 @@ class SQLConn(Magics, Configurable):
         self.shell.displayhook(HTML('<p style="color:gray">Query executed in {:2.2f} m</p>'.format(del_time)))
         return result, del_time
 
-    def _readsql_engine(self, sql, table_name, show_output, notify_result):
+    def _read_sql_engine(self, sql, table_name, show_output, notify_result):
         self.shell.all_ns_refs[0][table_name] = 'QUERY RUNNING'
         result, del_time = self._time_query(self.caller, sql)
 
@@ -172,15 +170,15 @@ class SQLConn(Magics, Configurable):
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
 
-    def _execsql_engine(self, sql, notify_result):
-        result, del_time = self._time_query(self._psql_execsql, sql)
+    def _exec_sql_engine(self, sql, notify_result):
+        result, del_time = self._time_query(self._psql_exec_sql, sql)
 
         if notify_result:
             self.notify_obj.notify_complete(del_time, 'Execute SQL', None)
 
     @cell_magic
-    def readsql(self, line, cell):
-        user_args = self._parse_readsql_args(line)
+    def read_sql(self, line, cell):
+        user_args = self._parse_read_sql_args(line)
         table_name, toggle_display, toggle_notify, async = [user_args[k] for k in ['table_name', 'display',
                                                                                    'notify', 'async']]
         sql = cell.format(**self.jupyter_namespace)
@@ -189,20 +187,20 @@ class SQLConn(Magics, Configurable):
         notify_result = self.notify_result ^ toggle_notify
         if async:
             async_show_output = False ^ toggle_display  # default to False
-            t = threading.Thread(target=self._readsql_engine, args=[sql, table_name, async_show_output, notify_result])
+            t = threading.Thread(target=self._read_sql_engine, args=[sql, table_name, async_show_output, notify_result])
             t.start()
         else:
-            self._readsql_engine(sql, table_name, show_output, notify_result)
+            self._read_sql_engine(sql, table_name, show_output, notify_result)
 
     @cell_magic
-    def execsql(self, line, cell):
+    def exec_sql(self, line, cell):
         if is_a_spark_connection(self.conn_object):
-            raise Exception('Spark connections do not use execsql; please use readsql.')
-        user_args = self._parse_execsql_args(line)
+            raise Exception('Spark connections do not use exec_sql; please use read_sql.')
+        user_args = self._parse_exec_sql_args(line)
         toggle_notify, async = [user_args[k] for k in ['notify', 'async']]
         sql = cell.format(**self.jupyter_namespace)
         notify_result = self.notify_result ^ toggle_notify
-        self._execsql_engine(sql, notify_result)
+        self._exec_sql_engine(sql, notify_result)
 
 
 class NoReturnValueResult(Exception):
@@ -260,6 +258,6 @@ def unload_ipython_extension(ip):
     # fix how it loads multiple times
     if 'SQLConn' in ip.magics_manager.registry:
         del ip.magics_manager.registry['SQLConn']
-    # del ip.magics_manager.magics['cell']['readsql']
+    # del ip.magics_manager.magics['cell']['read_sql']
     if 'SQLConn' in ip.config:
         del ip.config['SQLConn']

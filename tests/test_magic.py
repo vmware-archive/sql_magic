@@ -18,7 +18,7 @@ def test_query_1(sqlite_conn):
     conn = sqlite_conn
     ip.all_ns_refs[0]['conn'] = conn
     ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
-    ip.run_cell_magic('readsql', 'df', 'SELECT 1')
+    ip.run_cell_magic('read_sql', 'df', 'SELECT 1')
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0,0] == 1
 
@@ -26,21 +26,21 @@ def test_query_1_notify(sqlite_conn):
     conn = sqlite_conn
     ip.all_ns_refs[0]['conn'] = conn
     ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
-    ip.run_cell_magic('readsql', 'df -n', 'SELECT 1')
+    ip.run_cell_magic('read_sql', 'df -n', 'SELECT 1')
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0, 0] == 1
 
-def test_readsql_create_table_error():
+def test_read_sql_create_table_error():
     with pytest.raises(sql_magic.NoReturnValueResult):
         conn = sqlite_conn
         ip.all_ns_refs[0]['conn'] = conn
         ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
-        ip.run_cell_magic('readsql', '', 'DROP TABLE IF EXISTS test')
+        ip.run_cell_magic('read_sql', '', 'DROP TABLE IF EXISTS test')
 
-def test_execsql():
-    ip.run_cell_magic('execsql', '', 'DROP TABLE IF EXISTS test;')
-    ip.run_cell_magic('execsql', '', 'CREATE TABLE test AS SELECT 2;')
-    ip.run_cell_magic('readsql', 'df2', 'SELECT * FROM test')
+def test_exec_sql():
+    ip.run_cell_magic('exec_sql', '', 'DROP TABLE IF EXISTS test;')
+    ip.run_cell_magic('exec_sql', '', 'CREATE TABLE test AS SELECT 2;')
+    ip.run_cell_magic('read_sql', 'df2', 'SELECT * FROM test')
     df2 = ip.all_ns_refs[0]['df2']
-    ip.run_cell_magic('execsql', '', 'DROP TABLE IF EXISTS test;')
+    ip.run_cell_magic('exec_sql', '', 'DROP TABLE IF EXISTS test;')
     assert df2.iloc[0, 0] == 2

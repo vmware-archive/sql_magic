@@ -4,7 +4,7 @@ sql_magic
 sql_magic is Jupyter magic for writing SQL to interact with Spark (or Hive) and relational databases. Query results are saved directly to a Pandas dataframe.
 
 ```
-%%readsql df_result
+%%read_sql df_result
 SELECT *
 FROM table_name
 WHERE age < {threshold}
@@ -21,7 +21,7 @@ The sql_magic library expands upon existing libraries such as [ipython-sql](http
 
 * Support for both Apache Spark and relational databases
 * Asynchronous execution (useful for long queries)
-* SQL syntax highlighting
+* SQL syntax coloring in Jupyter
 * Browser notifications for query completion
 * Results directly returned as Pandas dataframes 
 
@@ -57,10 +57,10 @@ table_name = 'titanic'
 cols = ','.join(['age','sex','fare'])
 ~~~
 
-Finally, SQL code is executed with the %readsql cell magic. A browser notification containing the execution time and result dimensions will automatically appear once the query is finished.
+Finally, SQL code is executed with the %read_sql cell magic. A browser notification containing the execution time and result dimensions will automatically appear once the query is finished.
 
 ~~~
-%%readsql df_result
+%%read_sql df_result
 SELECT {cols}
 FROM {table_name}
 WHERE age < 10
@@ -73,7 +73,7 @@ A browser notification is displayed upon query completion.
 The code can be executed asynchronously using the -a flag. Asynchronous execution is particularly useful for running long queries in the background without blocking iPython kernel. The user is notified of a completed query via a browser notification.
 
 ~~~
-%%readsql df_result -a
+%%read_sql df_result -a
 ~~~
 
 Since results are automatically saved as a Pandas dataframe, we can easily visualize our results using the built-in Pandas’ plotting routines:
@@ -84,10 +84,10 @@ df.plot('age', 'fare', kind='scatter')
 
 <img src='https://github.com/crawles/Logos/blob/master/scatter.png?raw=true'>
 
-For code that doesn’t return a result such as creating a table, the `%%execsql` magic must be used (relational databases only).
+For code that doesn’t return a result such as creating a table, the `%%exec_sql` magic must be used (relational databases only).
 
 ~~~
-%%execsql
+%%exec_sql
 CREATE TABLE table123
 AS
 SELECT *
