@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sql_magic",
-    version="0.0.1",
+    version="0.0.2",
     author='Chris Rawles',
     author_email='crawles@pivotal.io',
     packages=find_packages(),
@@ -10,6 +10,7 @@ setup(
         'ipython',
         'jupyter',
         'pandas',
+        'sqlparse',
         'traitlets'
     ),
     include_package_data=True

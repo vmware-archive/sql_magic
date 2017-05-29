@@ -4,6 +4,8 @@ import time
 import threading
 
 import pandas.io.sql as psql
+import sqlparse
+
 from IPython.core.display import display_javascript, HTML
 from IPython.core.magic import Magics, magics_class, cell_magic
 
@@ -86,7 +88,10 @@ class SQLConn(Magics, Configurable):
         try:
             return psql.read_sql(sql_code, self.conn_object)
         except(tuple(no_return_result_exceptions)):
-            raise NoReturnValueResult("Query doesn't return a result; please use %%exec_sql")
+            import warnings
+            warnings.warn('hello')
+            return EmptyResult()
+            # raise NoReturnValueResult("Query doesn't return a result; please use %%exec_sql")
 
     def _psql_exec_sql(self, sql_code):
         return psql.execute(sql_code, self.conn_object)
@@ -158,10 +163,16 @@ class SQLConn(Magics, Configurable):
 
     def _read_sql_engine(self, sql, table_name, show_output, notify_result):
         self.shell.all_ns_refs[0][table_name] = 'QUERY RUNNING'
-        result, del_time = self._time_query(self.caller, sql)
-
+        try:
+            result, del_time = self._time_query(self.caller, sql)
+        except Exception as e:  # pandas' read_sql/sqlalchemy complains if no result
+            print(str(e))
+            no_result_error = (str(e) == 'This result object does not return rows. It has been closed automatically.')
+            if not no_result_error:
+                raise Exception(e)
         if table_name:
             # add to iPython namespace
+            #TODO: self.shell.user_ns.update({result_var: result})
             self.shell.all_ns_refs[0][table_name] = result
         if show_output:
             self.shell.displayhook(result)
@@ -173,6 +184,25 @@ class SQLConn(Magics, Configurable):
 
         if notify_result:
             self.notify_obj.notify_complete(del_time, 'Execute SQL', None)
+
+    @cell_magic
+    def _parse_and_run_sql(self, line, cell):
+        user_args = self._parse_read_sql_args(line)
+        table_name, toggle_display, toggle_notify, async = [user_args[k] for k in ['table_name', 'display',
+                                                                                   'notify', 'async']]
+        sql = cell.format(**self.jupyter_namespace)
+        show_output = self.output_result ^ toggle_display
+        notify_result = self.notify_result ^ toggle_notify
+
+        statements = sqlparse.split(sql)
+        num_statements = len(statements)
+        for i, s in enumerate(statements, start=1):
+            last_statement = (i == num_statements)
+            if last_statement:
+                self._read_sql_engine(s, table_name, show_output, notify_result)
+            else:
+                self._exec_sql_engine(s, notify_result)
+
 
     @cell_magic
     def read_sql(self, line, cell):
@@ -203,6 +233,13 @@ class SQLConn(Magics, Configurable):
 
 class NoReturnValueResult(Exception):
     pass
+
+
+class EmptyResult(object):
+    shape = None
+
+    def __str__(self):
+        return ''
 
 
 class Notify(object):
