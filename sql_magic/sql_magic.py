@@ -4,7 +4,7 @@ import time
 import threading
 
 import pandas.io.sql as psql
-from IPython.core.display import display, display_javascript, HTML
+from IPython.core.display import display_javascript, HTML
 from IPython.core.magic import Magics, magics_class, cell_magic
 
 try:
@@ -61,10 +61,6 @@ def is_a_sql_db_connection(connection):
     return isinstance(connection, tuple(AVAILABLE_CONNECTIONS))
 
 
-# add syntax coloring
-js_sql_syntax = "IPython.CodeCell.config_defaults.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%read_sql/, /^%%exec_sql/]};"
-display_javascript(js_sql_syntax, raw=True)
-
 @magics_class
 class SQLConn(Magics, Configurable):
 
@@ -83,7 +79,7 @@ class SQLConn(Magics, Configurable):
 
         self.notify_obj = Notify(shell)
 
-        # Add ourself to the list of module configurable via %config
+        # Add to the list of module configurable via %config
         self.shell.configurables.append(self)
 
     def _psql_read_sql_to_df(self, sql_code):
@@ -150,12 +146,14 @@ class SQLConn(Magics, Configurable):
     def _time_query(self, caller, sql):
         # time results and output
         pretty_start_time = time.strftime('%I:%M:%S %p %Z')
-        self.shell.displayhook(HTML('<p style="color:gray">Query started at {}</p>'.format(pretty_start_time)))
+        # self.shell.displayhook(HTML('<p style="color:gray">Query started at {}</p>'.format(pretty_start_time)))
+        print('Query started at {}'.format(pretty_start_time))
         start_time = time.time()
         result = caller(sql)
         end_time = time.time()
         del_time = (end_time-start_time)/60.
-        self.shell.displayhook(HTML('<p style="color:gray">Query executed in {:2.2f} m</p>'.format(del_time)))
+        # self.shell.displayhook(HTML('<p style="color:gray">Query executed in {:2.2f} m</p>'.format(del_time)))
+        print('Query executed in {:2.2f} m'.format(del_time))
         return result, del_time
 
     def _read_sql_engine(self, sql, table_name, show_output, notify_result):
@@ -207,7 +205,7 @@ class NoReturnValueResult(Exception):
     pass
 
 
-class Notify():
+class Notify(object):
 
     def __init__(self, shell):
         self.shell = shell
@@ -215,7 +213,7 @@ class Notify():
     def notify_complete(self, del_time, return_name, return_shape):
         pretty_time = time.strftime('%I:%M:%S %p %Z')
         cell_id = int(time.time())
-        cur_time = (1+time.time())*1000.
+        cur_time = (1+time.time())*1000.  # fixes issue where browser pops up on reload
         string_args = {
             'pretty_time': pretty_time,
             'del_time': del_time,
@@ -250,8 +248,13 @@ class Notify():
         html_str = add_cell_id + alert_str
         self.shell.displayhook(HTML(html_str))
 
+
 def load_ipython_extension(ip):
     """Load the extension in IPython."""
+    # add syntax coloring
+    js_sql_syntax = "IPython.CodeCell.config_defaults.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%read_sql/, /^%%exec_sql/]};"
+    display_javascript(js_sql_syntax, raw=True)
+
     ip.register_magics(SQLConn)
 
 def unload_ipython_extension(ip):

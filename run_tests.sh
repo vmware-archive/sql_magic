@@ -1,0 +1,1 @@
+ipython -m pytest tests
