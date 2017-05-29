@@ -174,7 +174,8 @@ class SQLConn(Magics, Configurable):
             # add to iPython namespace
             #TODO: self.shell.user_ns.update({result_var: result})
             self.shell.all_ns_refs[0][table_name] = result
-        if show_output:
+        query_has_result = not isinstance(result, EmptyResult)
+        if show_output and query_has_result:
             self.shell.displayhook(result)
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
