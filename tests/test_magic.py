@@ -52,3 +52,5 @@ def test_multiple_sql_statements_var():
     df3 = ip.all_ns_refs[0]['df3']
     assert df3.iloc[0, 0] == 2
 
+#TODO add async test
+
