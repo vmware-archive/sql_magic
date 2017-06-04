@@ -46,13 +46,10 @@ def test_query_1_notify(sqlite_conn):
 #         ip.run_cell_magic('read_sql', '', 'DROP TABLE IF EXISTS test')
 
 
-def test_exec_sql(sqlite_conn):
-    ip.run_cell_magic('exec_sql', '', 'DROP TABLE IF EXISTS test;')
-    ip.run_cell_magic('exec_sql', '', 'CREATE TABLE test AS SELECT 2;')
-    ip.run_cell_magic('read_sql', 'df2', 'SELECT * FROM test')
-    df2 = ip.all_ns_refs[0]['df2']
-    ip.run_cell_magic('exec_sql', '', 'DROP TABLE IF EXISTS test;')
-    assert df2.iloc[0, 0] == 2
+def test_no_result(sqlite_conn):
+    ip.run_cell_magic('read_sql', '_df', 'DROP TABLE IF EXISTS test;')
+    _df = ip.all_ns_refs[0]['_df']
+    assert isinstance(_df, sql_magic.EmptyResult)
 
 def test_multiple_sql_statements_var():
     sql_statement = '''
@@ -63,6 +60,15 @@ def test_multiple_sql_statements_var():
     ip.run_cell_magic('read_sql', 'df3', sql_statement)
     df3 = ip.all_ns_refs[0]['df3']
     assert df3.iloc[0, 0] == 2
+
+def test_multiple_sql_statements_no_result(sqlite_conn):
+    ip.run_cell_magic('read_sql', '', 'DROP TABLE IF EXISTS test;')
+    ip.run_cell_magic('read_sql', '', 'CREATE TABLE test AS SELECT 2;')
+    ip.run_cell_magic('read_sql', '', 'SELECT * FROM test')
+    ip.run_cell_magic('read_sql', '_df', 'DROP TABLE IF EXISTS test;')
+    _df = ip.all_ns_refs[0]['_df']
+    assert isinstance(_df, sql_magic.EmptyResult)
+    # assert df2.iloc[0, 0] == 2
 
 def test_async_multiple_queries(sqlite_conn):
     with pytest.raises(sql_magic.AsyncError):

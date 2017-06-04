@@ -210,13 +210,9 @@ class SQLConn(Magics, Configurable):
         sql = cell.format(**self.jupyter_namespace)
         show_output = self.output_result ^ toggle_display
         notify_result = self.notify_result ^ toggle_notify
-
-        statements = sqlparse.split(sql)
-        statements = [s for s in statements if s]
-        num_statements = len(statements)
-        print("ASYNC: {}".format(async))
+        statements = [s for s in sqlparse.split(sql) if s]
         if async:
-            if (num_statements > 1):
+            if len(statements) > 1:
                 raise AsyncError('Only one SQL statement allowed in async queries')
             else:
                 async_show_output = False ^ toggle_display  # default to False
@@ -225,39 +221,7 @@ class SQLConn(Magics, Configurable):
                 t.start()
         else:
             for i, s in enumerate(statements, start=1):
-                last_statement = (i == num_statements)
-                if last_statement:
-                    self._read_sql_engine(s, table_name, show_output, notify_result)
-                else:
-                    self._exec_sql_engine(s, notify_result)
-
-
-    # @cell_magic
-    # def read_sql(self, line, cell):
-    #     user_args = self._parse_read_sql_args(line)
-    #     table_name, toggle_display, toggle_notify, async = [user_args[k] for k in ['table_name', 'display',
-    #                                                                                'notify', 'async']]
-    #     sql = cell.format(**self.jupyter_namespace)
-    #
-    #     show_output = self.output_result ^ toggle_display
-    #     notify_result = self.notify_result ^ toggle_notify
-    #     if async:
-    #         async_show_output = False ^ toggle_display  # default to False
-    #         t = threading.Thread(target=self._read_sql_engine, args=[sql, table_name, async_show_output, notify_result])
-    #         t.start()
-    #     else:
-    #         self._read_sql_engine(sql, table_name, show_output, notify_result)
-
-    @cell_magic
-    def exec_sql(self, line, cell):
-        if is_a_spark_connection(self.conn_object):
-            raise Exception('Spark connections do not use exec_sql; please use read_sql.')
-        user_args = self._parse_exec_sql_args(line)
-        toggle_notify, async = [user_args[k] for k in ['notify', 'async']]
-        sql = cell.format(**self.jupyter_namespace)
-        notify_result = self.notify_result ^ toggle_notify
-        self._exec_sql_engine(sql, notify_result)
-
+                self._read_sql_engine(s, table_name, show_output, notify_result)
 
 class NoReturnValueResult(Exception):
     pass
