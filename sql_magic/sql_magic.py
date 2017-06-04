@@ -64,6 +64,19 @@ def is_a_sql_db_connection(connection):
     # must follow Python Database API Specification v2.0
     return isinstance(connection, tuple(AVAILABLE_CONNECTIONS))
 
+js_sql_syntax = '''
+require(['notebook/js/codecell'], function(codecell) {
+  // https://github.com/jupyter/notebook/issues/2453
+  codecell.CodeCell.options_default.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%read_sql/]};
+  console.log('AAAAA');
+  Jupyter.notebook.events.one('kernel_ready.Kernel', function(){
+      console.log('BBBBB');
+      Jupyter.notebook.get_cells().map(function(cell){
+          if (cell.cell_type == 'code'){ cell.auto_highlight(); } }) ;
+  });
+});
+'''
+display_javascript(js_sql_syntax, raw=True)
 
 @magics_class
 class SQLConn(Magics, Configurable):
@@ -248,9 +261,6 @@ class EmptyResult(object):
 def load_ipython_extension(ip):
     """Load the extension in IPython."""
     # add syntax coloring
-    js_sql_syntax = "IPython.CodeCell.config_defaults.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%read_sql/, /^%%exec_sql/]};"
-    display_javascript(js_sql_syntax, raw=True)
-
     ip.register_magics(SQLConn)
 
 def unload_ipython_extension(ip):

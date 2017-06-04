@@ -23,6 +23,12 @@ def test_query_1(sqlite_conn):
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0,0] == 1
 
+def test_query_1_async(sqlite_conn):
+    ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
+    ip.run_cell_magic('read_sql', 'df -a', 'SELECT "async_query"')
+    df = ip.all_ns_refs[0]['df']
+    assert df.iloc[0, 0] == 'async_query'
+
 def test_query_1_notify(sqlite_conn):
     ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
     ip.run_cell_magic('read_sql', 'df -n', 'SELECT 1')
