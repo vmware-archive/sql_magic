@@ -89,7 +89,7 @@ class SQLConn(Magics, Configurable):
             return psql.read_sql(sql_code, self.conn_object)
         except(tuple(no_return_result_exceptions)):
             import warnings
-            warnings.warn('hello')
+            # warnings.warn('hello')
             return EmptyResult()
             # raise NoReturnValueResult("Query doesn't return a result; please use %%exec_sql")
 
@@ -196,6 +196,7 @@ class SQLConn(Magics, Configurable):
         notify_result = self.notify_result ^ toggle_notify
 
         statements = sqlparse.split(sql)
+        statements = [s for s in statements if s]
         num_statements = len(statements)
         for i, s in enumerate(statements, start=1):
             last_statement = (i == num_statements)
