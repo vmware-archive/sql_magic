@@ -43,12 +43,6 @@ def test_query_1_notify(sqlite_conn):
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0, 0] == 1
 
-# def test_read_sql_create_table_error(sqlite_conn):
-#     with pytest.raises(sql_magic.NoReturnValueResult):
-#         ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
-#         ip.run_cell_magic('read_sql', '', 'DROP TABLE IF EXISTS test')
-
-
 def test_no_result(sqlite_conn):
     ip.run_cell_magic('read_sql', '_df', 'DROP TABLE IF EXISTS test;')
     _df = ip.all_ns_refs[0]['_df']

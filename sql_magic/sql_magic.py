@@ -7,7 +7,7 @@ import pandas.io.sql as psql
 import sqlparse
 
 from IPython.core.display import display_javascript
-from IPython.core.magic import Magics, magics_class, cell_magic
+from IPython.core.magic import Magics, magics_class, cell_magic, line_magic
 
 from notify import Notify
 
@@ -89,7 +89,6 @@ class SQLConn(Magics, Configurable):
     def __init__(self, shell):
         # access shell environment
         self.shell = shell
-        self.jupyter_namespace = shell.all_ns_refs[0]
 
         Configurable.__init__(self, config=shell.config)
         Magics.__init__(self, shell=shell)
@@ -126,7 +125,7 @@ class SQLConn(Magics, Configurable):
         jupyter_namespace = self.shell.all_ns_refs[0]
         if proposal['value'] not in jupyter_namespace.keys():
             raise TraitError('Connection name "{}" not recognized'.format(proposal['value']))
-        proposal_value = self.jupyter_namespace[proposal['value']]
+        proposal_value = jupyter_namespace[proposal['value']]
 
         if not is_an_available_connection(proposal_value):
             raise TraitError('Connection name "{}" not recognized'.format(proposal['value']))
@@ -135,7 +134,9 @@ class SQLConn(Magics, Configurable):
     @observe('conn_object_name')
     def config_connection(self, change):
         new_conn_object_name = change['new']
-        conn_object = self.jupyter_namespace[new_conn_object_name]
+        print(new_conn_object_name)
+
+        conn_object = self.shell.all_ns_refs[0][new_conn_object_name]
         self.conn_object = conn_object
         if is_a_spark_connection(conn_object):
             caller = self._spark_call
@@ -190,13 +191,21 @@ class SQLConn(Magics, Configurable):
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
 
+    from IPython.core.magic import needs_local_scope
+
+    @needs_local_scope
     @cell_magic
-    # def _parse_and_run_sql(self, line, cell):
-    def read_sql(self, line, cell):
+    # @line_magic
+    def read_sql(self, line, cell='', local_ns={}):
+        #TODO: Fix namespace/scope issue
+        # save globals and locals so they can be referenced in bind vars
+        user_ns = self.shell.user_ns.copy()
+        user_ns.update(local_ns)
+
         user_args = self._parse_read_sql_args(line)
         table_name, toggle_display, toggle_notify, async = [user_args[k] for k in ['table_name', 'display',
                                                                                    'notify', 'async']]
-        sql = cell.format(**self.jupyter_namespace)
+        sql = cell.format(**self.shell.all_ns_refs[0])
         show_output = self.output_result ^ toggle_display
         notify_result = self.notify_result ^ toggle_notify
         statements = [s for s in sqlparse.split(sql) if s]
