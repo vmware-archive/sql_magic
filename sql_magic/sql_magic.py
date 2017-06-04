@@ -144,7 +144,7 @@ class SQLConn(Magics, Configurable):
 
         self.caller = caller
 
-    def _create_flag_parser(self, line_string):
+    def _create_flag_parser(self):
         ap = argparse.ArgumentParser()
         ap.add_argument('-n', '--notify', help='Toggle option for notifying query result', action='store_true')
         ap.add_argument('-a', '--async', help='Run query in seperate thread. Please be cautious when assigning\
@@ -152,16 +152,11 @@ class SQLConn(Magics, Configurable):
         return ap
 
     def _parse_read_sql_args(self, line_string):
-        ap = self._create_flag_parser(line_string)
+        ap = self._create_flag_parser()
         ap.add_argument('-d', '--display', help='Toggle option for outputing query result', action='store_true')
         ap.add_argument('table_name', nargs='?')
         opts = ap.parse_args(line_string.split())
         return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify, 'async': opts.async}
-
-    def _parse_exec_sql_args(self, line_string):
-        ap = self._create_flag_parser(line_string)
-        opts = ap.parse_args(line_string.split())
-        return {'notify': opts.notify, 'async': opts.async}
 
     def _time_query(self, caller, sql):
         # time results and output
@@ -194,12 +189,6 @@ class SQLConn(Magics, Configurable):
             self.shell.displayhook(result)
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
-
-    def _exec_sql_engine(self, sql, notify_result):
-        result, del_time = self._time_query(self._psql_exec_sql, sql)
-
-        if notify_result:
-            self.notify_obj.notify_complete(del_time, 'Execute SQL', None)
 
     @cell_magic
     # def _parse_and_run_sql(self, line, cell):

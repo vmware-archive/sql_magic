@@ -13,6 +13,9 @@ ip = get_ipython()
 ip.register_magics(sql_magic.SQLConn)
 sql_magic.load_ipython_extension(ip)
 
+# TODO: Can we test these using multiple parameters? I.E, SparkSQL
+
+
 @pytest.fixture
 def sqlite_conn():
     conn = create_engine('sqlite+pysqlite:///test.db', module=sqlite)
@@ -51,7 +54,7 @@ def test_no_result(sqlite_conn):
     _df = ip.all_ns_refs[0]['_df']
     assert isinstance(_df, sql_magic.EmptyResult)
 
-def test_multiple_sql_statements_var():
+def test_multiple_sql_statements_var(sqlite_conn):
     sql_statement = '''
     DROP TABLE IF EXISTS TEST;
     SELECT 1;
@@ -78,5 +81,4 @@ def test_async_multiple_queries(sqlite_conn):
         SELECT 2;
         '''
         ip.run_cell_magic('read_sql', '-a', sql_statement)
-#TODO add async test
 
