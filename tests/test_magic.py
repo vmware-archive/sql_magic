@@ -1,7 +1,8 @@
 import nose
-from nose import with_setup
+import time
+
 import pytest
-import pandas
+import pandas as pd
 import sql_magic
 
 from IPython import get_ipython
@@ -27,6 +28,10 @@ def test_query_1_async(sqlite_conn):
     ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
     ip.run_cell_magic('read_sql', 'df -a', 'SELECT "async_query"')
     df = ip.all_ns_refs[0]['df']
+    query_still_running = isinstance(df, str) and (df == 'QUERY RUNNING')
+    assert query_still_running
+    time.sleep(0.1)  # need to wait for query to finish
+    df = ip.all_ns_refs[0]['df']
     assert df.iloc[0, 0] == 'async_query'
 
 def test_query_1_notify(sqlite_conn):
@@ -39,6 +44,7 @@ def test_query_1_notify(sqlite_conn):
 #     with pytest.raises(sql_magic.NoReturnValueResult):
 #         ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
 #         ip.run_cell_magic('read_sql', '', 'DROP TABLE IF EXISTS test')
+
 
 def test_exec_sql(sqlite_conn):
     ip.run_cell_magic('exec_sql', '', 'DROP TABLE IF EXISTS test;')
@@ -54,9 +60,17 @@ def test_multiple_sql_statements_var():
     SELECT 1;
     SELECT 2;
     '''
-    ip.run_cell_magic('_parse_and_run_sql', 'df3', sql_statement)
+    ip.run_cell_magic('read_sql', 'df3', sql_statement)
     df3 = ip.all_ns_refs[0]['df3']
     assert df3.iloc[0, 0] == 2
 
+def test_async_multiple_queries(sqlite_conn):
+    with pytest.raises(sql_magic.AsyncError):
+        sql_statement = '''
+        DROP TABLE IF EXISTS TEST;
+        SELECT 1;
+        SELECT 2;
+        '''
+        ip.run_cell_magic('read_sql', '-a', sql_statement)
 #TODO add async test
 
