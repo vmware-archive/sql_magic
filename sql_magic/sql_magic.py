@@ -1,15 +1,14 @@
 import argparse
 import sys
-import time
 import threading
+import time
 
 import pandas.io.sql as psql
 import sqlparse
-
 from IPython.core.display import display_javascript
-from IPython.core.magic import Magics, magics_class, cell_magic, line_magic
+from IPython.core.magic import Magics, magics_class, cell_magic
 
-from notify import Notify
+from sql_magic.notify import Notify
 
 try:
     from traitlets.config.configurable import Configurable
