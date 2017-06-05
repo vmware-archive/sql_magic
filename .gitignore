@@ -37,7 +37,7 @@ wip*
 .idea
 
 # sqlite
-test.db
+test*.db
 
 metastore_db
 derby.log

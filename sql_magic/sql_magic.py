@@ -150,14 +150,17 @@ class SQLConn(Magics, Configurable):
         ap.add_argument('-n', '--notify', help='Toggle option for notifying query result', action='store_true')
         ap.add_argument('-a', '--async', help='Run query in seperate thread. Please be cautious when assigning\
                                                result to a variable', action='store_true')
+        ap.add_argument('-d', '--display', help='Toggle option for outputing query result', action='store_true')
+        ap.add_argument('-c', '--connection', help='Specify connection object for this query (override default\
+                                                    connection object)', action='store', default=False)
+        ap.add_argument('table_name', nargs='?')
         return ap
 
     def _parse_read_sql_args(self, line_string):
         ap = self._create_flag_parser()
-        ap.add_argument('-d', '--display', help='Toggle option for outputing query result', action='store_true')
-        ap.add_argument('table_name', nargs='?')
         opts = ap.parse_args(line_string.split())
-        return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify, 'async': opts.async}
+        return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify,
+                'async': opts.async, 'force_conn': opts.connection}
 
     def _time_query(self, caller, sql):
         # time results and output

@@ -1,6 +1,11 @@
 sql_magic
 =========
 
+TODO:
+* Add connection string to README
+* Multi-line query to README
+* Remove exec_sql
+
 sql_magic is Jupyter magic for writing SQL to interact with Spark (or Hive) and relational databases. Query results are saved directly to a Pandas dataframe.
 
 ```
