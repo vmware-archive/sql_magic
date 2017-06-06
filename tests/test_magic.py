@@ -22,8 +22,8 @@ def sqlite_conn():
     ip.all_ns_refs[0]['conn'] = conn
 
 def test_query_1(sqlite_conn):
-    ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
-    ip.run_cell_magic('read_sql', 'df', 'SELECT 1')
+    # ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
+    # ip.run_cell_magic('read_sql', 'df', 'SELECT 1')
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0,0] == 1
 
@@ -42,6 +42,15 @@ def test_query_1_notify(sqlite_conn):
     ip.run_cell_magic('read_sql', 'df -n', 'SELECT 1')
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0, 0] == 1
+
+def test_commented_query(sqllite_conn):
+    sql_statement = '''
+    /* DROP TABLE IF EXISTS TEST; */
+    /* CREATE TABLE TEST AS SELECT 1; */
+    /* WITH test AS (SELECT 1) */
+    /* SELECT 2 */
+    '''
+    assert 1 == 2
 
 def test_second_conn_object(sqlite_conn):
     # test original
@@ -82,7 +91,7 @@ def test_multiple_sql_statements_var(sqlite_conn):
     DROP TABLE IF EXISTS TEST;
     SELECT 1;
     SELECT 2;
-    '''
+'''
     ip.run_cell_magic('read_sql', 'df3', sql_statement)
     df3 = ip.all_ns_refs[0]['df3']
     assert df3.iloc[0, 0] == 2

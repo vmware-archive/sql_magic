@@ -1,14 +1,14 @@
 import argparse
-import sys
 import threading
 import time
 
 import pandas.io.sql as psql
 import sqlparse
-from IPython.core.display import display_javascript
 from IPython.core.magic import Magics, magics_class, cell_magic
 
-from sql_magic.notify import Notify
+from . import utils
+
+from .notify import Notify
 
 try:
     from traitlets.config.configurable import Configurable
@@ -17,66 +17,38 @@ except ImportError:
     from IPython.config.configurable import Configurable
     from IPython.utils.traitlets import observe, validate, Bool, Unicode, TraitError
 
-AVAILABLE_CONNECTIONS = []
-DEFAULT_OUTPUT_RESULT = True
-DEFAULT_NOTIFY_RESULT = True
 
+available_connections = []
 no_return_result_exceptions = []  # catch exception if user used read_sql where query returns no result
-
 try:
     import pyspark
-    AVAILABLE_CONNECTIONS.append(pyspark.sql.context.SQLContext)
-    AVAILABLE_CONNECTIONS.append(pyspark.sql.context.HiveContext)
-    AVAILABLE_CONNECTIONS.append(pyspark.sql.session.SparkSession)  # import last;  will fail for older spark versions
+    available_connections.append(pyspark.sql.context.SQLContext)
+    available_connections.append(pyspark.sql.context.HiveContext)
+    available_connections.append(pyspark.sql.session.SparkSession)  # import last;  will fail for older spark versions
 except:
     pass
 try:
     import psycopg2
-    AVAILABLE_CONNECTIONS.append(psycopg2.extensions.connection)
+    available_connections.append(psycopg2.extensions.connection)
     no_return_result_exceptions.append(TypeError)
 except:
     pass
 try:
     import sqlite3
-    AVAILABLE_CONNECTIONS.append(sqlite3.Connection)
+    available_connections.append(sqlite3.Connection)
 except:
     pass
 try:
     import sqlalchemy
-    AVAILABLE_CONNECTIONS.append(sqlalchemy.engine.base.Engine)
+    available_connections.append(sqlalchemy.engine.base.Engine)
     no_return_result_exceptions.append(sqlalchemy.exc.ResourceClosedError)
 except:
     pass
 
+conn_val = utils.ConnValidation(available_connections)
 
-def is_an_available_connection(connection):
-    return isinstance(connection, tuple(AVAILABLE_CONNECTIONS))
-
-
-def is_a_spark_connection(connection):
-    if 'pyspark' not in sys.modules:  # pyspark isn't installed
-        return False
-    return type(connection).__module__.startswith('pyspark')
-
-
-def is_a_sql_db_connection(connection):
-    # must follow Python Database API Specification v2.0
-    return isinstance(connection, tuple(AVAILABLE_CONNECTIONS))
-
-js_sql_syntax = '''
-require(['notebook/js/codecell'], function(codecell) {
-  // https://github.com/jupyter/notebook/issues/2453
-  codecell.CodeCell.options_default.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%read_sql/]};
-  console.log('AAAAA');
-  Jupyter.notebook.events.one('kernel_ready.Kernel', function(){
-      console.log('BBBBB');
-      Jupyter.notebook.get_cells().map(function(cell){
-          if (cell.cell_type == 'code'){ cell.auto_highlight(); } }) ;
-  });
-});
-'''
-display_javascript(js_sql_syntax, raw=True)
-
+DEFAULT_OUTPUT_RESULT = True
+DEFAULT_NOTIFY_RESULT = True
 @magics_class
 class SQLConn(Magics, Configurable):
 
@@ -88,12 +60,9 @@ class SQLConn(Magics, Configurable):
     def __init__(self, shell):
         # access shell environment
         self.shell = shell
-
         Configurable.__init__(self, config=shell.config)
         Magics.__init__(self, shell=shell)
-
         self.notify_obj = Notify(shell)
-
         # Add to the list of module configurable via %config
         self.shell.configurables.append(self)
 
@@ -125,43 +94,29 @@ class SQLConn(Magics, Configurable):
         if proposal['value'] not in jupyter_namespace.keys():
             raise TraitError('Connection name "{}" not recognized'.format(proposal['value']))
         proposal_value = jupyter_namespace[proposal['value']]
-
-        if not is_an_available_connection(proposal_value):
+        if not conn_val.is_an_available_connection(proposal_value):
             raise TraitError('Connection name "{}" not recognized'.format(proposal['value']))
         return proposal['value']
 
     @observe('conn_object_name')
     def config_connection(self, change):
         new_conn_object_name = change['new']
-        print(new_conn_object_name)
-
         conn_object = self.shell.all_ns_refs[0][new_conn_object_name]
         self.conn_object = conn_object
-        if is_a_spark_connection(conn_object):
+        if conn_val.is_a_spark_connection(conn_object):
             caller = self._spark_call
         else:
             caller = self._psql_read_sql_to_df
 
         self.caller = caller
 
-    def _create_flag_parser(self):
-        ap = argparse.ArgumentParser()
-        ap.add_argument('-n', '--notify', help='Toggle option for notifying query result', action='store_true')
-        ap.add_argument('-a', '--async', help='Run query in seperate thread. Please be cautious when assigning\
-                                               result to a variable', action='store_true')
-        ap.add_argument('-d', '--display', help='Toggle option for outputing query result', action='store_true')
-        ap.add_argument('-c', '--connection', help='Specify connection object for this query (override default\
-                                                    connection object)', action='store', default=False)
-        ap.add_argument('table_name', nargs='?')
-        return ap
-
     def _parse_read_sql_args(self, line_string):
-        ap = self._create_flag_parser()
+        ap = utils.create_flag_parser()
         opts = ap.parse_args(line_string.split())
         return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify,
                 'async': opts.async, 'force_conn': opts.connection}
 
-    def _time_query(self, caller, sql):
+    def _time_and_run_query(self, caller, sql):
         # time results and output
         pretty_start_time = time.strftime('%I:%M:%S %p %Z')
         # self.shell.displayhook(HTML('<p style="color:gray">Query started at {}</p>'.format(pretty_start_time)))
@@ -177,7 +132,8 @@ class SQLConn(Magics, Configurable):
     def _read_sql_engine(self, sql, table_name, show_output, notify_result):
         self.shell.all_ns_refs[0][table_name] = 'QUERY RUNNING'
         try:
-            result, del_time = self._time_query(self.caller, sql)
+            #TODO: if force caller, use that
+            result, del_time = self._time_and_run_query(self.caller, sql)
         except Exception as e:  # pandas' read_sql/sqlalchemy complains if no result
             print(str(e))
             no_result_error = (str(e) == 'This result object does not return rows. It has been closed automatically.')
@@ -237,7 +193,7 @@ class EmptyResult(object):
 
 def load_ipython_extension(ip):
     """Load the extension in IPython."""
-    # add syntax coloring
+    utils.add_syntax_coloring()
     ip.register_magics(SQLConn)
 
 def unload_ipython_extension(ip):
