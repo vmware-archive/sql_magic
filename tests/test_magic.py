@@ -31,8 +31,7 @@ def test_query_1_async(sqlite_conn):
     ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
     ip.run_cell_magic('read_sql', 'df -a', 'SELECT "async_query"')
     df = ip.all_ns_refs[0]['df']
-    query_still_running = isinstance(df, str) and (df == 'QUERY RUNNING')
-    assert query_still_running
+    assert isinstance(df, str) and (df == 'QUERY RUNNING')
     time.sleep(0.1)  # need to wait for query to finish
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0, 0] == 'async_query'
@@ -43,14 +42,14 @@ def test_query_1_notify(sqlite_conn):
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0, 0] == 1
 
-def test_commented_query(sqlite_conn):
-    sql_statement = '''
-    /* DROP TABLE IF EXISTS TEST; */
-    /* CREATE TABLE TEST AS SELECT 1; */
-    /* WITH test AS (SELECT 1) */
-    /* SELECT 2 */
-    '''
-    assert 1 == 2
+# def test_commented_query(sqlite_conn):
+#     sql_statement = '''
+#     /* DROP TABLE IF EXISTS TEST; */
+#     /* CREATE TABLE TEST AS SELECT 1; */
+#     /* WITH test AS (SELECT 1) */
+#     /* SELECT 2 */
+#     '''
+#     assert 1 == 2
 
 def test_second_conn_object(sqlite_conn):
     # test original
@@ -104,13 +103,3 @@ def test_multiple_sql_statements_no_result(sqlite_conn):
     _df = ip.all_ns_refs[0]['_df']
     assert isinstance(_df, sql_magic.EmptyResult)
     # assert df2.iloc[0, 0] == 2
-
-def test_async_multiple_queries(sqlite_conn):
-    with pytest.raises(sql_magic.AsyncError):
-        sql_statement = '''
-        DROP TABLE IF EXISTS TEST;
-        SELECT 1;
-        SELECT 2;
-        '''
-        ip.run_cell_magic('read_sql', '-a', sql_statement)
-
