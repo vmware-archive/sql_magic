@@ -4,7 +4,7 @@ import time
 
 import pandas.io.sql as psql
 import sqlparse
-from IPython.core.magic import Magics, magics_class, cell_magic
+from IPython.core.magic import Magics, magics_class, cell_magic, needs_local_scope
 
 from . import utils
 
@@ -119,17 +119,17 @@ class SQLConn(Magics, Configurable):
     def _time_and_run_query(self, caller, sql):
         # time results and output
         pretty_start_time = time.strftime('%I:%M:%S %p %Z')
-        # self.shell.displayhook(HTML('<p style="color:gray">Query started at {}</p>'.format(pretty_start_time)))
         print('Query started at {}'.format(pretty_start_time))
         start_time = time.time()
         result = caller(sql)
         end_time = time.time()
         del_time = (end_time-start_time)/60.
-        # self.shell.displayhook(HTML('<p style="color:gray">Query executed in {:2.2f} m</p>'.format(del_time)))
         print('Query executed in {:2.2f} m'.format(del_time))
         return result, del_time
 
-    def _read_sql_engine(self, sql, table_name, show_output, notify_result):
+    def _read_sql_engine(self, sql, options):
+        table_name, show_output, notify_result, async = [options[k] for k in ['table_name', 'display',
+                                                                              'notify', 'async']]
         self.shell.all_ns_refs[0][table_name] = 'QUERY RUNNING'
         try:
             #TODO: if force caller, use that
@@ -149,7 +149,6 @@ class SQLConn(Magics, Configurable):
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
 
-    from IPython.core.magic import needs_local_scope
 
     @needs_local_scope
     @cell_magic
@@ -160,24 +159,21 @@ class SQLConn(Magics, Configurable):
         user_ns = self.shell.user_ns.copy()
         user_ns.update(local_ns)
 
-        user_args = self._parse_read_sql_args(line)
-        table_name, toggle_display, toggle_notify, async = [user_args[k] for k in ['table_name', 'display',
-                                                                                   'notify', 'async']]
+        options = self._parse_read_sql_args(line)
         sql = cell.format(**self.shell.all_ns_refs[0])
-        show_output = self.output_result ^ toggle_display
-        notify_result = self.notify_result ^ toggle_notify
-        statements = [s for s in sqlparse.split(sql) if s]
-        if async:
+        options['notify'] = self.notify_result ^ options['notify']
+        statements = [s for s in sqlparse.split(sql) if s]  # exclude blank statments
+        if options['async']:
             if len(statements) > 1:
                 raise AsyncError('Only one SQL statement allowed in async queries')
             else:
-                async_show_output = False ^ toggle_display  # default to False
-                t = threading.Thread(target=self._read_sql_engine, args=[sql, table_name, async_show_output,
-                                                                         notify_result])
+                options['display'] = False ^ options['display']  # default to False, unless user provides flag
+                t = threading.Thread(target=self._read_sql_engine, args=[sql, options])
                 t.start()
         else:
+            options['display'] = self.output_result ^ options['display']
             for i, s in enumerate(statements, start=1):
-                self._read_sql_engine(s, table_name, show_output, notify_result)
+                self._read_sql_engine(s, options)
 
 class NoReturnValueResult(Exception):
     pass
