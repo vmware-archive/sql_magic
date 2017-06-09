@@ -2,6 +2,7 @@ import time
 
 from IPython.core.display import HTML
 
+
 class Notify(object):
 
     def __init__(self, shell):

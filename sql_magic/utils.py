@@ -44,7 +44,6 @@ class ConnValidation(object):
         return lambda sql_code: conn_object.sql(sql_code).toPandas()
 
     def read_connection(self, conn_object):
-        # conn_object = self.shell.all_ns_refs[0][conn_object_name]
         if self.is_a_spark_connection(conn_object):
             caller = self._spark_call(conn_object)
         else:
@@ -83,4 +82,11 @@ def create_flag_parser():
                                                 connection object)', action='store', default=False)
     ap.add_argument('table_name', nargs='?')
     return ap
+
+def parse_read_sql_args(line_string):
+    ap = create_flag_parser()
+    opts = ap.parse_args(line_string.split())
+    return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify,
+            'async': opts.async, 'force_caller': opts.connection}
+
 

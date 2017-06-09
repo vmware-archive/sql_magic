@@ -26,6 +26,14 @@ def test_query_1(sqlite_conn):
     df = ip.all_ns_refs[0]['df']
     assert df.iloc[0,0] == 1
 
+def test_python_variable(sqlite_conn):
+    val = 'this is a python variable'
+    ip.user_global_ns['val'] = val
+    ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
+    ip.run_cell_magic('read_sql', 'df', "SELECT '{val}'")
+    df = ip.all_ns_refs[0]['df']
+    assert df.iloc[0,0] == val
+
 def test_query_1_async(sqlite_conn):
     ip.run_line_magic('config', "SQLConn.conn_object_name = 'conn'")
     ip.run_cell_magic('read_sql', 'df -a', 'SELECT "async_query"')

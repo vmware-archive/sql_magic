@@ -84,18 +84,11 @@ class SQLConn(Magics, Configurable):
         self.caller = conn_val.read_connection(conn_object)
 
 
-    def _parse_read_sql_args(self, line_string):
-        ap = utils.create_flag_parser()
-        opts = ap.parse_args(line_string.split())
-        return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify,
-                'async': opts.async, 'force_caller': opts.connection}
-
-
 
     def _read_sql_engine(self, sql, options):
         option_keys = ['table_name', 'display', 'notify', 'force_caller', 'async']
         table_name, show_output, notify_result, force_caller, async = [options[k] for k in option_keys]
-        self.shell.all_ns_refs[0][table_name] = 'QUERY RUNNING'
+        self.shell.user_global_ns[table_name] = 'QUERY RUNNING'
 
         if force_caller:
             conn_val.validate_conn_object(force_caller, self.shell)
@@ -108,7 +101,7 @@ class SQLConn(Magics, Configurable):
         if table_name:
             # add to iPython namespace
             #TODO: self.shell.user_ns.update({result_var: result})
-            self.shell.all_ns_refs[0][table_name] = result
+            self.shell.user_global_ns[table_name] = result
         query_has_result = not isinstance(result, EmptyResult)
         if show_output and query_has_result:
             self.shell.displayhook(result)
@@ -128,8 +121,8 @@ class SQLConn(Magics, Configurable):
         user_ns = self.shell.user_ns.copy()
         user_ns.update(local_ns)
 
-        options = self._parse_read_sql_args(line)
-        sql = cell.format(**self.shell.all_ns_refs[0])
+        options = utils.parse_read_sql_args(line)
+        sql = cell.format(**self.shell.user_global_ns)
         options['notify'] = self.notify_result ^ options['notify']
         statements = [s for s in sqlparse.split(sql) if s]  # exclude blank statements
         if options['async']:
