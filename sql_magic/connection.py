@@ -36,8 +36,8 @@ class Connection(object):
             try:
                 return psql.read_sql(sql_code, conn_object)
             except(tuple(self.no_return_result_exceptions)):
-                import warnings
                 return EmptyResult()
+
         return _run_db_sql
 
     def _spark_call(self, conn_object):
@@ -50,7 +50,10 @@ class Connection(object):
                 sql_code = (''.join([t.value for t in tokens]))
             print(sql_code)
 
-            return conn_object.sql(sql_code).toPandas()
+            df =  conn_object.sql(sql_code).toPandas()
+            if df.shape == (0, 0):
+                return EmptyResult()
+            return df
         return _run_spark_sql
 
     def read_connection(self, conn_object):

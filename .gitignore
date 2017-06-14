@@ -39,6 +39,9 @@ wip*
 # sqlite
 test*.db
 
+#spark
+spark-warehouse
+
 metastore_db
 derby.log
 logo.png

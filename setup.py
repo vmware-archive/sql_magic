@@ -7,6 +7,7 @@ setup(
     author_email='crawles@pivotal.io',
     packages=find_packages(),
     install_requires=(
+        'findspark',
         'ipython',
         'jupyter',
         'pandas',
