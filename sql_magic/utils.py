@@ -61,7 +61,7 @@ def add_syntax_coloring():
     js_sql_syntax = '''
     require(['notebook/js/codecell'], function(codecell) {
       // https://github.com/jupyter/notebook/issues/2453
-      codecell.CodeCell.options_default.highlight_modes['magic_text/x-sql'] = {'reg':[/^%%read_sql/]};
+      codecell.CodeCell.options_default.highlight_modes['magic_text/x-sql'] = {'reg':[/^%read_sql/, /^%%read_sql/]};
       Jupyter.notebook.events.one('kernel_ready.Kernel', function(){
           console.log('BBBBB');
           Jupyter.notebook.get_cells().map(function(cell){

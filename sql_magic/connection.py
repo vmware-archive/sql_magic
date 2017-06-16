@@ -48,9 +48,7 @@ class Connection(object):
             if last_token.value == ';':
                 tokens = tokens[:-1]
                 sql_code = (''.join([t.value for t in tokens]))
-            print(sql_code)
-
-            df =  conn_object.sql(sql_code).toPandas()
+            df = conn_object.sql(sql_code).toPandas()
             if df.shape == (0, 0):
                 return EmptyResult()
             return df
@@ -88,11 +86,11 @@ class Connection(object):
             # assign result to variable
             self.shell.user_global_ns[table_name] = result
         query_has_result = not isinstance(result, EmptyResult)
-        if show_output and query_has_result:
-            self.shell.displayhook(result)
+        # if show_output and query_has_result:
+        #     self.shell.displayhook(result)
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
-        return None
+        return result
 
     def execute_sqls(self, sqls, options):
         for i, s in enumerate(sqls, start=1):

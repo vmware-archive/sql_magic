@@ -1,7 +1,7 @@
 import threading
 
 import sqlparse
-from IPython.core.magic import Magics, magics_class, cell_magic, needs_local_scope
+from IPython.core.magic import Magics, magics_class, line_cell_magic, cell_magic, needs_local_scope
 
 from .connection import Connection
 from . import utils
@@ -78,11 +78,17 @@ class SQL(Magics, Configurable):
         self.conn.caller = self.conn.read_connection(conn_object)
 
     @needs_local_scope
-    @cell_magic
-    # @line_magic
-    def read_sql(self, line, cell=''):
-        options = utils.parse_read_sql_args(line)
-        sql = cell.format(**self.shell.user_global_ns)  # python variables {} in sql query
+    # @cell_magic
+    @line_cell_magic
+    def read_sql(self, line, cell=None, local_ns=None):
+        if cell:
+            sql_code = cell
+            options = utils.parse_read_sql_args(line)
+            options['display'] = self.output_result ^ options['display']  # for line magic, want display=True
+        else:
+            sql_code = line
+            options = {'table_name': None, 'display': True, 'notify': True, 'force_caller': False, 'async': False}
+        sql = sql_code.format(**self.shell.user_global_ns)  # python variables {} in sql query
         options['notify'] = self.notify_result ^ options['notify']  # toggle notify
         statements = [s for s in sqlparse.split(sql) if s]  # exclude blank statements
         if options['async']:
@@ -90,8 +96,10 @@ class SQL(Magics, Configurable):
             t = threading.Thread(target=self.conn.execute_sqls, args=[statements, options])
             t.start()
         else:
-            options['display'] = self.output_result ^ options['display']
-            self.conn.execute_sqls(statements, options)
+            result = self.conn.execute_sqls(statements, options)
+            if options['display']:
+                return result
+
 
 
 def load_ipython_extension(ip):

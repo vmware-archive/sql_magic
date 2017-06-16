@@ -49,7 +49,12 @@ def test_query_1(conn):
     ip.run_cell_magic('read_sql', 'df', 'SELECT 1')
     df = ip.user_global_ns['df']
     assert df.iloc[0, 0] == 1
-    ip.user_global_ns['df'] = None
+    df = None
+
+def test_line_magic_query_1(conn):
+    df = ip.run_line_magic('read_sql', 'SELECT 123')
+    assert df.iloc[0, 0] == 123
+    df = None
 
 def test_python_variable(conn):
     val = 'this is a python variable'
