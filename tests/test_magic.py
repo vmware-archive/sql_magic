@@ -25,6 +25,7 @@ ip.user_global_ns[conn_name] = sqlite_conn
 connections.append(conn_name)
 
 try:
+    # may need to run rm metastore_db/*lck
     conn_name = 'spark'
     ip.user_global_ns[conn_name] = create_spark_conn()
     connections.append(conn_name)
@@ -38,9 +39,13 @@ def test_spark_configured():
 def conn(request):
     conn_name = request.param
     ip.run_line_magic('config', "SQL.conn_name = '{conn_name}'".format(conn_name=conn_name))
-    assert ip.run_line_magic('config', 'SQL.conn_name') == conn_name
-    return conn_name
-    #TODO teardown if spark
+    yield conn_name
+    if conn_name == 'spark':  # teardown spark
+        spark_obj = ip.user_global_ns[conn_name]
+        spark_obj.stop()
+
+def test_connected(conn):
+    assert ip.run_line_magic('config', 'SQL.conn_name') == conn
 
 def test_query_1(conn):
     ip.run_cell_magic('read_sql', 'df', 'SELECT 1')
@@ -78,21 +83,7 @@ def test_no_result(conn):
     ip.run_cell_magic('read_sql', '_df', 'CREATE TABLE test AS SELECT 1')
     ip.run_cell_magic('read_sql', '_df', 'DROP TABLE IF EXISTS test;')
     _df = ip.user_global_ns['_df']
-    # pyspark
     assert isinstance(_df, EmptyResult)
-
-# def test_invalud_conn_object(sqlite_conn):
-#     with pytest.raises(message="Expecting ZeroDivisionError"):
-#         ip.run_line_magic('config', "SQL.conn_name = 'invalid_conn'")
-
-# def test_commented_query(sqlite_conn):
-#     sql_statement = '''
-#     /* DROP TABLE IF EXISTS TEST; */
-#     /* CREATE TABLE TEST AS SELECT 1; */
-#     /* WITH test AS (SELECT 1) */
-#     /* SELECT 2 */
-#     '''
-#     assert 1 == 2
 
 def test_second_conn_object(conn):
     conn2 = create_engine('sqlite+pysqlite:///test2.db', module=sqlite)
@@ -124,4 +115,3 @@ def test_multiple_sql_statements_no_result(conn):
     ip.run_cell_magic('read_sql', '_df', 'DROP TABLE IF EXISTS test;')
     _df = ip.user_global_ns['_df']
     assert isinstance(_df, EmptyResult)
-    # assert df2.iloc[0, 0] == 2

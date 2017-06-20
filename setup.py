@@ -14,5 +14,6 @@ setup(
         'sqlparse',
         'traitlets'
     ),
+    tests_require=['pytest>=3.0'],
     include_package_data=True
 )
