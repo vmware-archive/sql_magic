@@ -17,9 +17,6 @@ ip = get_ipython()
 ip.register_magics(sql_magic.SQL)
 sql_magic.load_ipython_extension(ip)
 
-# TODO: NAME to use, db.conn.__name__
-
-
 connections = []
 
 sqlite_conn = create_engine('sqlite+pysqlite:///test.db', module=sqlite)
