@@ -1,13 +1,6 @@
 sql_magic
 =========
 
-TODO:
-* Add connection string to README
-* Multi-line query to README
-* Remove exec_sql
-* can use any db2 compat connection
-* Add line magic
-
 sql_magic is Jupyter magic for writing SQL to interact with Spark (or Hive) and relational databases. Query results are saved directly to a Pandas dataframe.
 
 ```
@@ -23,12 +16,8 @@ WHERE age < {threshold}
 
 
 The sql_magic library expands upon existing libraries such as [ipython-sql](https://github.com/catherinedevlin/ipython-sql) with the following features: 
-
-
-
-* Support for both Apache Spark and relational databases
+* Support for both Apache Spark and relational database connections simultaneously
 * Asynchronous execution (useful for long queries)
-* SQL syntax coloring in Jupyter
 * Browser notifications for query completion
 * Results directly returned as Pandas dataframes 
 
@@ -38,9 +27,9 @@ See the included [Jupyter notebook](https://github.com/crawles/sql_magic/blob/ma
 
 `pip install sql_magic`
 
-## Usage: Execute SQL on a PostgreSQL Database using SQLAlchemy
+## Usage: Execute SQL on a relational database
 
-Relational databases can be accessed using SQLAlchemy or any library implementing the [Python DB 2.0 Specification](https://www.python.org/dev/peps/pep-0249/) such as the [psycopg2](http://initd.org/psycopg/) Python library.
+Relational databases can be accessed using [SQLAlchemy](https://www.sqlalchemy.org/) or any library implementing the [Python DB 2.0 Specification](https://www.python.org/dev/peps/pep-0249/) (E.g., `psycopg2`, `sqlite3`, etc.).
 
 ~~~
 # create SQLAlchemy engine for postgres
@@ -48,15 +37,14 @@ from sqlalchemy import create_engine
 postgres_engine = create_engine('postgresql://{user}:{password}@{host}:5432/{database}'.format(**connect_credentials))
 ~~~
 
-The sql_magic library is loaded using the `%load_ext` iPython extension syntax and is pointed to the SQLAlchemy engine object as follows: 
+The sql_magic library is loaded using the `%load_ext` iPython extension syntax and is pointed to the connection object as follows: 
 
 ~~~
-# load and configure extension
 %load_ext sql_magic
 %config SQL.conn_name = 'postgres_engine'
 ~~~
 
-Python variables can be directly referenced in the SQL query using the string formatting syntax as sql_magic executes the code in the Jupyter cell as a string. 
+Python variables can be directly referenced in the SQL query using the string formatting syntax: 
 
 ~~~
 # variables for use in SQL query
@@ -64,7 +52,7 @@ table_name = 'titanic'
 cols = ','.join(['age','sex','fare'])
 ~~~
 
-Finally, SQL code is executed with the %read_sql cell magic. A browser notification containing the execution time and result dimensions will automatically appear once the query is finished.
+SQL code is executed with the %read_sql cell magic. A browser notification containing the execution time and result dimensions will automatically appear once the query is finished.
 
 ~~~
 %%read_sql df_result
@@ -73,11 +61,32 @@ FROM {table_name}
 WHERE age < 10
 ~~~
 
+SQL syntax is colored inside Jupyter: 
+
+<img src='https://github.com/crawles/Logos/blob/master/sql_magic_syntax.png?raw=true'>
+
 A browser notification is displayed upon query completion.
 
 <img src='https://github.com/crawles/Logos/blob/master/notification_example.png?raw=true'>
 
-The code can be executed asynchronously using the -a flag. Asynchronous execution is particularly useful for running long queries in the background without blocking iPython kernel. The user is notified of a completed query via a browser notification.
+
+Queries can be run again additional connection objects (Spark, Hive or relational db connections) with the `-c` or `--connection` flag:
+
+~~~
+#sql_magic supports all libraries following Python DB 2.0 Specification
+import psycopg2
+conn2 = psycopg2.connect(**connect_credentials)
+~~~
+
+~~~
+%%read_sql df_result -c conn2
+SELECT {cols}
+FROM {table_name}
+WHERE age < 10
+~~~
+
+
+The code can be executed asynchronously using the -a flag. Asynchronous execution is particularly useful for running long queries in the background without blocking iPython kernel.
 
 ~~~
 %%read_sql df_result -a
@@ -91,14 +100,21 @@ df.plot('age', 'fare', kind='scatter')
 
 <img src='https://github.com/crawles/Logos/blob/master/scatter.png?raw=true'>
 
-For code that doesn’t return a result such as creating a table, the `%%exec_sql` magic must be used (relational databases only).
+Multi-line SQL statements are also supported:
 
 ~~~
-%%exec_sql
+%%read_sql
+DROP TABLE IF EXISTS table123;
 CREATE TABLE table123
 AS
 SELECT *
-FROM table456 
+FROM table456;
+~~~
+
+Finally, line magic synatax is also available:
+
+~~~
+result = %read_sql SELECT * FROM table123;
 ~~~
 
 ## Using sql_magic with Spark or Hive
@@ -107,6 +123,7 @@ The syntax for connecting with Spark is the same as above; simply point the conn
 
 ~~~
 # spark 2.0+
+#uses SparkContext
 %config SQL.conn_name = 'spark'
 
 # spark 1.6 and before
@@ -163,6 +180,4 @@ That’s it! Give sql_magic a try and let us know what you think. Please submit 
 ### Acknowledgements
 
 Thank you to Scott Hajek, Greg Tam, and Srivatsan Ramanujam, along with the rest of the Pivotal Data Science team for their help in developing this library. Thank you to Lia and Jackie Ho for help with the diagram. This library was inspired from and aided by the work of the [ipython-sql](https://github.com/catherinedevlin/ipython-sql) library.
-
-
 

@@ -93,7 +93,6 @@ class SQL(Magics, Configurable):
         self.conn.caller = self.conn.read_connection(conn_object)
 
     @needs_local_scope
-    # @cell_magic
     @line_cell_magic
     def read_sql(self, line, cell=None, local_ns=None):
         if cell:
@@ -114,7 +113,6 @@ class SQL(Magics, Configurable):
             result = self.conn.execute_sqls(statements, options)
             if options['display']:
                 return result
-
 
 
 def load_ipython_extension(ip):
