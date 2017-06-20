@@ -1,2 +1,2 @@
-# from . import engine, notify, utils
+__version__ = '0.3'
 from .sql_magic import *
