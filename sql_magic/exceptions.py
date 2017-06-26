@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2017-Present Pivotal Software, Inc. All rights reserved.
 #
 # This program and the accompanying materials are made available under
@@ -11,7 +12,14 @@
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
-# limitations under the License.
+# limitations under the License.utils
+"""
+exceptions.py
+~~~~~~~~~~~~~~~~~~~~~
+
+Exceptions for sql_magic.
+"""
+
 
 class NoReturnValueResult(Exception):
     pass
@@ -20,6 +28,9 @@ class NoReturnValueResult(Exception):
 class AsyncError(Exception):
     pass
 
+
+class ConnectionNotConfigured(Exception):
+    pass
 
 class EmptyResult(object):
     shape = None  # simulate object dimension (pandas)

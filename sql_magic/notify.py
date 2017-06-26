@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2017-Present Pivotal Software, Inc. All rights reserved.
 #
 # This program and the accompanying materials are made available under
@@ -12,6 +13,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+notify.py
+~~~~~~~~~~~~~~~~~~~~~
+
+For display browser notifications for query completion.
+"""
 
 import time
 
@@ -24,9 +31,13 @@ class Notify(object):
         self.shell = shell
 
     def notify_complete(self, del_time, return_name, return_shape):
+        """Execute JavaScipt code that shows when a query is complete."""
         pretty_time = time.strftime('%I:%M:%S %p %Z')
         cell_id = int(time.time())
-        cur_time = (1+time.time())*1000.  # fixes issue where browser pops up on reload
+        # fixes issue where browser pops up on reload
+        # without this, javascript is executed every
+        # time notebook is loaded
+        cur_time = (1+time.time())*1000.
         string_args = {
             'pretty_time': pretty_time,
             'del_time': del_time,

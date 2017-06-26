@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2017-Present Pivotal Software, Inc. All rights reserved.
 #
 # This program and the accompanying materials are made available under
@@ -12,68 +13,26 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+utils.py
+~~~~~~~~~~~~~~~~~~~~~
+
+Utility functions.
+"""
 
 import argparse
-import sqlparse
-import sys
 
-import pandas.io.sql as psql
+import sqlparse
 
 from IPython.core.display import display_javascript
-
-from .exceptions import EmptyResult
 
 try:
     from traitlets import TraitError
 except ImportError:
     from IPython.utils.traitlets import TraitError
 
-class Connection(object):
-
-    def __init__(self, available_connection_types, no_return_result_exceptions):
-        self.available_connection_types = available_connection_types
-        self.no_return_result_exceptions = no_return_result_exceptions
-
-    def is_an_available_connection(self, connection):
-        return isinstance(connection, tuple(self.available_connection_types))
-
-    # def is_a_sql_db_connection(self, connection):
-    #     # must follow Python Database API Specification v2.0
-    #     return isinstance(connection, tuple(self.available_connections))
-
-    def is_a_spark_connection(self, connection):
-        if 'pyspark' not in sys.modules:  # pyspark isn't installed
-            return False
-        return type(connection).__module__.startswith('pyspark')
-
-    def _psql_read_sql_to_df(self, conn_object):
-        def read_sql(sql_code):
-            try:
-                return psql.read_sql(sql_code, conn_object)
-            except(tuple(self.no_return_result_exceptions)):
-                import warnings
-                return EmptyResult()
-        return read_sql
-
-    def _spark_call(self, conn_object):
-        return lambda sql_code: conn_object.sql(sql_code).toPandas()
-
-    def read_connection(self, conn_object):
-        if self.is_a_spark_connection(conn_object):
-            caller = self._spark_call(conn_object)
-        else:
-            caller = self._psql_read_sql_to_df(conn_object)
-        return caller
-
-    def validate_conn_object(self, conn_name, shell):
-        try:
-            proposal_value = shell.user_global_ns[conn_name]
-            self.is_an_available_connection(proposal_value)
-        except:
-            raise TraitError('Connection name "{}" not recognized'.format(conn_name))
-        return conn_name
-
 def add_syntax_coloring():
+    """Adds syntax coloring to cell magic for SELECT, FROM, etc."""
     js_sql_syntax = '''
     require(['notebook/js/codecell'], function(codecell) {
       // https://github.com/jupyter/notebook/issues/2453
@@ -89,6 +48,7 @@ def add_syntax_coloring():
     display_javascript(js_sql_syntax, raw=True)
 
 def create_flag_parser():
+    """Create parser for reading arguments and flags provided by user in cell magic."""
     ap = argparse.ArgumentParser()
     ap.add_argument('-n', '--notify', help='Toggle option for notifying query result', action='store_true')
     ap.add_argument('-a', '--async', help='Run query in seperate thread. Please be cautious when assigning\
@@ -100,6 +60,7 @@ def create_flag_parser():
     return ap
 
 def parse_read_sql_args(line_string):
+    """Parse arguments."""
     ap = create_flag_parser()
     opts = ap.parse_args(line_string.split())
     return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify,
@@ -107,7 +68,7 @@ def parse_read_sql_args(line_string):
 
 
 def is_empty_statement(s):
-    """Parse SQL statement"""
+    """Check if SQL statement is blank or commented."""
     if not s:
         return True
     p = sqlparse.parse(s)[0]

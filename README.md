@@ -29,7 +29,7 @@ See the included [Jupyter notebook](https://github.com/crawles/sql_magic/blob/ma
 
 ## Usage: Execute SQL on a relational database
 
-Relational databases can be accessed using [SQLAlchemy](https://www.sqlalchemy.org/) or any library implementing the [Python DB 2.0 Specification](https://www.python.org/dev/peps/pep-0249/) (E.g., `psycopg2`, `sqlite3`, etc.).
+Relational databases can be accessed using [SQLAlchemy](https://www.sqlalchemy.org/) or libraries implementing the [Python DB 2.0 Specification](https://www.python.org/dev/peps/pep-0249/) (E.g., `psycopg2`, `sqlite3`, etc.).
 
 ~~~
 # create SQLAlchemy engine for postgres
@@ -73,7 +73,7 @@ A browser notification is displayed upon query completion.
 Queries can be run again additional connection objects (Spark, Hive or relational db connections) with the `-c` or `--connection` flag:
 
 ~~~
-#sql_magic supports all libraries following Python DB 2.0 Specification
+#sql_magic supports libraries following Python DB 2.0 Specification
 import psycopg2
 conn2 = psycopg2.connect(**connect_credentials)
 ~~~

@@ -1,0 +1,7 @@
+findspark
+ipython
+jupyter
+pandas
+sqlparse
+traitlets
+pytest>=3.0
