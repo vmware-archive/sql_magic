@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import argparse
+import sqlparse
 import sys
 
 import pandas.io.sql as psql
@@ -105,3 +106,12 @@ def parse_read_sql_args(line_string):
             'async': opts.async, 'force_caller': opts.connection}
 
 
+def is_empty_statement(s):
+    """Parse SQL statement"""
+    if not s:
+        return True
+    p = sqlparse.parse(s)[0]
+    t = p.tokens[0]
+    is_a_comment = t.ttype is not None and (t.ttype.parent == sqlparse.tokens.Comment)
+    if t.ttype and is_a_comment:
+        return True

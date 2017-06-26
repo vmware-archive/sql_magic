@@ -76,7 +76,7 @@ class SQL(Magics, Configurable):
         self.conn = Connection(shell, available_connection_types, no_return_result_exceptions)
 
     @validate('output_result')
-    def _validate_output_result(self, proposal):
+    def _validate_output_result(self, proposal):  # validate result when using %config
         try:
             return bool(proposal['value'])
         except:
@@ -95,18 +95,37 @@ class SQL(Magics, Configurable):
     @needs_local_scope
     @line_cell_magic
     def read_sql(self, line, cell=None, local_ns=None):
+        """
+        SQL Magic function that can be used as cell or line magic.
+
+        Example
+        ~~~~~~~
+        # assign result to df
+
+        %%read_sql df
+        SELECT *
+        FROM table
+
+        # line magic
+        df = %read_sql SELECT * FROM TABLE
+        """
         if cell:
             sql_code = cell
             options = utils.parse_read_sql_args(line)
-            options['display'] = self.output_result ^ options['display']  # for line magic, want display=True
+            # use XOR function; flags serve to toggle current default
+            options['display'] = self.output_result ^ options['display']
+            options['notify'] = self.notify_result ^ options['notify']
         else:
             sql_code = line
-            options = {'table_name': None, 'display': True, 'notify': True, 'force_caller': False, 'async': False}
+            options = {'table_name': None,  # table assignment: df = %read_sql
+                       'display': True,  # always return result
+                       'notify': self.notify_result,
+                       'force_caller': False,
+                       'async': False}
         sql = sql_code.format(**self.shell.user_global_ns)  # python variables {} in sql query
-        options['notify'] = self.notify_result ^ options['notify']  # toggle notify
-        statements = [s for s in sqlparse.split(sql) if s]  # exclude blank statements
+        statements = [s for s in sqlparse.split(sql) if not utils.is_empty_statement(s)]  # exclude blank statements
         if options['async']:
-            options['display'] = False ^ options['display']  # default to False, unless user provides flag
+            options['display'] = False  #  use must use browser notification to see when query completes
             t = threading.Thread(target=self.conn.execute_sqls, args=[statements, options])
             t.start()
         else:

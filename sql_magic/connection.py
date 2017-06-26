@@ -102,8 +102,6 @@ class Connection(object):
             # assign result to variable
             self.shell.user_global_ns.update({table_name: result})
         query_has_result = not isinstance(result, EmptyResult)
-        # if show_output and query_has_result:
-        #     self.shell.displayhook(result)
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
         return result
