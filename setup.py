@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="sql_magic",
-    version="0.0.2",
+    version="0.0.3",
     author='Chris Rawles',
     author_email='crawles@pivotal.io',
     packages=find_packages(),
