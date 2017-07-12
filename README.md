@@ -19,9 +19,8 @@ The sql_magic library expands upon existing libraries such as [ipython-sql](http
 * Support for both Apache Spark and relational database connections
 * Asynchronous execution (useful for long queries)
 * Browser notifications for query completion
-* Results directly returned as Pandas dataframes 
 
-See the included [Jupyter notebook](https://github.com/crawles/sql_magic/blob/master/sql_magic%20API.ipynb) for examples and a tutorial.
+See the included [Jupyter notebook](https://github.com/pivotal/sql_magic/blob/master/sql_magic%20API.ipynb) for examples and a tutorial.
 
 ## Installation
 
