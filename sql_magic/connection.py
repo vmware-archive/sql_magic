@@ -115,28 +115,33 @@ class Connection(object):
             caller = self.caller
         if caller is None:
             raise ConnectionNotConfigured("A connection object must be configured using %config SQL.conn_name")
-        result, del_time = self._time_and_run_query(caller, sql)
+        result, del_time, time_output = self._time_and_run_query(caller, sql)
 
         if table_name:
             # assign result to variable
             self.shell.user_global_ns.update({table_name: result})
         if notify_result:
             self.notify_obj.notify_complete(del_time, table_name, result.shape)
+            sys.stdout.write(time_output)
         return result
 
     def _time_and_run_query(self, caller, sql):
         """Time the query and execute the SQL using the caller."""
         pretty_start_time = time.strftime('%I:%M:%S %p %Z')
-        print('Query started at {}'.format(pretty_start_time))
+        time_output = 'Query started at {}'.format(pretty_start_time)
+        sys.stdout.write(time_output)
         start_time = time.time()
         result = caller(sql)
         end_time = time.time()
         del_time = (end_time - start_time) / 60.
-        print('Query executed in {:2.2f} m'.format(del_time))
-        return result, del_time
+        query_finish_str = '; Query executed in {:2.2f} m'.format(del_time)
+        sys.stdout.write(query_finish_str)
+        time_output += query_finish_str  # need to save this bc clearing output for notifications
+        return result, del_time, time_output
 
     def execute_sqls(self, sqls, options):
         """Execute a list of sql statements"""
+        r = None
         for i, s in enumerate(sqls, start=1):
             r = self._read_sql_engine(s, options)
         return r  # return last result

@@ -22,7 +22,7 @@ For display browser notifications for query completion.
 
 import time
 
-from IPython.core.display import HTML
+from IPython.core.display import clear_output, HTML
 
 
 class Notify(object):
@@ -64,10 +64,13 @@ class Notify(object):
 
           }}
         }}
+        var isIE = /*@cc_on!@*/false || !!document.documentMode;
         // prevents notifications from popping up when notebook is re-opened
-        if (Date.now() < {cur_time}) {{
+        if (Date.now() < {cur_time} && !isIE) {{
         notifyMe(); }};
         </script>
         '''.format(**string_args)
         html_str = add_cell_id + alert_str
         self.shell.displayhook(HTML(html_str))
+        # clear output bc displayhook creates [Out] cell, cluttering notebook
+        clear_output()
