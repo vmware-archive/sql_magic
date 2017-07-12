@@ -55,7 +55,7 @@ class Notify(object):
           else {{
             var notification = new Notification('Query Finished in {del_time:2.2f} m', {{
               icon: 'https://raw.githubusercontent.com/crawles/Logos/master/jupyter.png?raw=true',
-              body: "{pretty_time}\\n\\nName: {return_name}\\nDimensions: {return_shape}",
+              body: "Name: {return_name}\\nDimensions: {return_shape}",
             }});
 
             notification.onclick = function () {{
