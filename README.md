@@ -16,11 +16,11 @@ WHERE age < {threshold}
 
 
 The sql_magic library expands upon existing libraries such as [ipython-sql](https://github.com/catherinedevlin/ipython-sql) with the following features: 
-* Support for both Apache Spark and relational database connections
+* Support for both Apache Spark and relational database connections simultaneously
 * Asynchronous execution (useful for long queries)
 * Browser notifications for query completion
 
-See the included [Jupyter notebook](https://github.com/pivotal/sql_magic/blob/master/sql_magic%20API.ipynb) for examples and a tutorial.
+See the included [Jupyter notebook](https://github.com/pivotal/sql_magic/blob/master/sql_magic%20API.ipynb) for examples and API usage.
 
 ## Installation
 
