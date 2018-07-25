@@ -132,10 +132,10 @@ class SQL(Magics, Configurable):
                        'display': True,  # always return result
                        'notify': self.notify_result,
                        'force_caller': False,
-                       'async': False}
+                       '_async': False}
         sql = sql_code.format(**self.shell.user_global_ns)  # python variables {} in sql query
         statements = [s for s in sqlparse.split(sql) if not utils.is_empty_statement(s)]  # exclude blank statements
-        if options['async']:
+        if options['_async']:
             options['display'] = False  #  must use browser notification to see when query completes
             t = threading.Thread(target=self.conn.execute_sqls, args=[statements, options])
             t.start()
