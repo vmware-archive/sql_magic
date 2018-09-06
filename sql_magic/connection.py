@@ -102,8 +102,8 @@ class Connection(object):
     def _read_sql_engine(self, sql, options):
         """Runs SQL query and uses options if use wants to force the SQL caller,
         return the result as a variable, and show a browser notification"""
-        option_keys = ['table_name', 'display', 'notify', 'force_caller', 'async']
-        table_name, show_output, notify_result, force_caller, async = [options[k] for k in option_keys]
+        option_keys = ['table_name', 'display', 'notify', 'force_caller', '_async']
+        table_name, show_output, notify_result, force_caller, _async = [options[k] for k in option_keys]
         if table_name:  # for async
             self.shell.user_global_ns.update({table_name: 'QUERY RUNNING'})
 

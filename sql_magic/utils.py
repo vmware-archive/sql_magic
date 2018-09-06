@@ -51,7 +51,7 @@ def create_flag_parser():
     """Create parser for reading arguments and flags provided by user in cell magic."""
     ap = argparse.ArgumentParser()
     ap.add_argument('-n', '--notify', help='Toggle option for notifying query result', action='store_true')
-    ap.add_argument('-a', '--async', help='Run query in seperate thread. Please be cautious when assigning\
+    ap.add_argument('-a', '--_async', help='Run query in seperate thread. Please be cautious when assigning\
                                            result to a variable', action='store_true')
     ap.add_argument('-d', '--display', help='Toggle option for outputing query result', action='store_true')
     ap.add_argument('-c', '--connection', help='Specify connection object for this query (override default\
@@ -64,7 +64,7 @@ def parse_read_sql_args(line_string):
     ap = create_flag_parser()
     opts = ap.parse_args(line_string.split())
     return {'table_name': opts.table_name, 'display': opts.display, 'notify': opts.notify,
-            'async': opts.async, 'force_caller': opts.connection}
+            '_async': opts._async, 'force_caller': opts.connection}
 
 
 def is_empty_statement(s):
